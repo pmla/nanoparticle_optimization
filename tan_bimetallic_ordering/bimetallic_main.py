@@ -86,7 +86,6 @@ def main(num_solutions):
 
     mip_energies = []
     ns = np.arange(0, num_atoms + 1)
-    #ns = np.array([0, 1, 2, 10, num_atoms])
     for numb in ns:
         energies = solve_mip_model(numb, intercept, clusters,
                                    sym_mappings, num_solutions)
@@ -97,8 +96,11 @@ def main(num_solutions):
 
     ans, aenergies = annealed.get_annealed_configurations(intercept, clusters)
     afs = calc_formation_energy(num_atoms, E0, E1, ans, aenergies)
-    plt.scatter(ans, afs, marker='x', c='C1', lw=2)
+    plt.scatter(ans, afs, marker='x', c='C1', lw=2,
+                label='simulated annealing')
 
+    ground_data = []
+    nth_data = []
     for i in range(num_solutions):
 
         _ns = []
@@ -109,8 +111,20 @@ def main(num_solutions):
                 energies += [ys[i]]
 
         fs = calc_formation_energy(num_atoms, E0, E1, _ns, energies)
-        c = 'C%d' % ([0, 2][i > 0])
-        plt.scatter(_ns, fs, marker='o', edgecolor=c, facecolor='none', lw=2)
+        if i == 0:
+            ground_data += zip(_ns, list(fs))
+        else:
+            nth_data += zip(_ns, list(fs))
+
+    ns, fs = zip(*ground_data)
+    plt.scatter(ns, fs, marker='o', edgecolor='C0',
+                facecolor='none', lw=2, label='MIP ground state', zorder=1)
+
+    ns, fs = zip(*nth_data)
+    plt.scatter(ns, fs, marker='o', edgecolor='C2', facecolor='none',
+                lw=2, label='MIP nth energy level state', zorder=0)
+
+    plt.legend(loc=9)
     plt.show()
 
 if __name__ == "__main__":
