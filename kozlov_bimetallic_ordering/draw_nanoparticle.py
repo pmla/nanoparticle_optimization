@@ -1,8 +1,6 @@
-import math
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
 
 def draw(points, config):
@@ -19,9 +17,8 @@ def draw(points, config):
         ax.scatter(xs, ys, zs, c=c, marker='o', s=800)
 
     (xs, ys, zs) = zip(*points)
-    lim = max([abs(e) for e in xs+ys+zs])
+    lim = max([abs(e) for e in xs + ys + zs])
     ax.set_xlim(-lim, lim)
     ax.set_ylim(-lim, lim)
     ax.set_zlim(-lim, lim)
     plt.show()
-

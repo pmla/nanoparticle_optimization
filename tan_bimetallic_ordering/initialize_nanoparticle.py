@@ -9,7 +9,6 @@ def read_coefficients(path):
     lines = [e for e in lines if len(e) > 0]
     sizes = [int(e) for i, e in enumerate(lines) if i % 4 == 0]
     weights = [float(e) for i, e in enumerate(lines) if i % 4 == 2]
-    data = zip(sizes, weights)
 
     weight0 = [w for s, w in zip(sizes, weights) if s == 0][0]
     weights1 = [w for s, w in zip(sizes, weights) if s == 1]
@@ -17,11 +16,13 @@ def read_coefficients(path):
     weights3 = [w for s, w in zip(sizes, weights) if s == 3]
     return weight0, weights1 + weights2 + weights3
 
+
 def read_integral_coordinates(path):
 
     lines = open(path).read().split('\n')
     coords = [[int(e) for e in line.split()] for line in lines]
     return np.array(coords)
+
 
 def get_unique_clusters():
 
@@ -40,11 +41,13 @@ def get_unique_clusters():
     n3 = n3d + n3e + n3f
     return n1, n2, n3
 
+
 def gen_fingerprints(points):
 
     distances = scipy.spatial.distance.cdist(points, points)
     sig = np.sort(distances)
     return [tuple(e) for e in sig], distances
+
 
 def gen_sig(distances, site_types, sites):
 
@@ -54,6 +57,7 @@ def gen_sig(distances, site_types, sites):
         line = tuple([site_types[i]] + ds)
         sig += [line]
     return tuple(sorted(sig))
+
 
 def gen_site_types(coords, n1):
 
@@ -67,6 +71,7 @@ def gen_site_types(coords, n1):
                 site_types += [index]
     assert(len(site_types) == num_atoms)
     return site_types, distances
+
 
 def get_cluster_instances(coords, n1, n2, n3, weights):
 
@@ -93,6 +98,7 @@ def get_cluster_instances(coords, n1, n2, n3, weights):
 
     return clusters
 
+
 def get_params():
 
     intercept, weights = read_coefficients('cluster_coefficients.txt')
@@ -102,4 +108,3 @@ def get_params():
     clusters = get_cluster_instances(coords, n1, n2, n3, weights)
 
     return coords, intercept, clusters
-

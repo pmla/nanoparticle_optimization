@@ -24,23 +24,23 @@ def build_mipmodel(intercept, clusters, numb):
     for (sites, param) in yclusters:
 
         if param >= 0:
-            model.addConstr( y[sites] >= sum([x[e] for e in sites])
-                                         - len(sites) + 1 )
+            model.addConstr(y[sites] >= sum([x[e] for e in sites]) - len(sites) + 1)
         else:
             for e in sites:
-                model.addConstr( y[sites] <= x[e] )
+                model.addConstr(y[sites] <= x[e])
 
-    model.addConstr( sum(x.values()) == numb )
+    model.addConstr(sum(x.values()) == numb)
 
-    model.setObjective( intercept
-                + sum([param * x[site] for (site, param) in xclusters])
-                + sum([param * y[sites] for (sites, param) in yclusters]),
-                GRB.MINIMIZE)
+    model.setObjective(intercept
+                       + sum([param * x[site] for (site, param) in xclusters])
+                       + sum([param * y[sites] for (sites, param) in yclusters]),
+                       GRB.MINIMIZE)
 
     model.params.MIPGap = 0
     model.params.Presolve = 2
     model.params.MIPFocus = 2
     return model, x, xindices
+
 
 def solve_mipmodel(numb, intercept, clusters, sym_mappings, num_solutions):
 
@@ -60,16 +60,17 @@ def solve_mipmodel(numb, intercept, clusters, sym_mappings, num_solutions):
 
         energies += [objective]
 
-        #sum {xj : x'_j = 0} + sum {1-xj : x'_j = 1} >= 1
+        # sum {xj : x'_j = 0} + sum {1-xj : x'_j = 1} >= 1
         for mapping in sym_mappings:
             inactive = [x[mapping[i]] for i in xindices if xprev[i] == 0]
             active = [x[mapping[i]] for i in xindices if xprev[i] == 1]
             model.addConstr(sum(inactive + [1 - e for e in active]) >= 1)
         model.update()
         model.params.BestObjStop = objective + 1E-9
-        model.params.MIPFocus=0
+        model.params.MIPFocus = 0
 
     return energies
+
 
 def calc_formation_energy(num_atoms, y0, y1, xs, ys):
 
@@ -77,6 +78,7 @@ def calc_formation_energy(num_atoms, y0, y1, xs, ys):
     ys = np.array(ys).astype(np.double)
     ys = ys - (y0 + (y1 - y0) * fracs)
     return ys / num_atoms
+
 
 def main(num_solutions):
 
@@ -88,7 +90,7 @@ def main(num_solutions):
     ns = np.arange(0, num_atoms + 1)
     for numb in ns:
         energies = solve_mipmodel(numb, intercept, clusters,
-                                   sym_mappings, num_solutions)
+                                  sym_mappings, num_solutions)
         mip_energies += [energies]
 
     E0 = mip_energies[0][0]
@@ -130,6 +132,7 @@ def main(num_solutions):
     plt.legend(loc=9)
     plt.show()
 
+
 if __name__ == "__main__":
 
     if len(sys.argv) < 2:
@@ -137,4 +140,3 @@ if __name__ == "__main__":
 
     num_solutions = int(sys.argv[1])
     main(num_solutions)
-

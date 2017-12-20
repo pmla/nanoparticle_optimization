@@ -20,15 +20,15 @@ def mip_optimize(params, site_types, bonds, layers, partitions, numb):
 
         i, j = b
         if bond_energy_AB <= 0:
-            model.addConstr( y[b] >= x[i] + x[j] - 1)
+            model.addConstr(y[b] >= x[i] + x[j] - 1)
         else:
-            model.addConstr( y[b] <= x[i] )
-            model.addConstr( y[b] <= x[j] )
+            model.addConstr(y[b] <= x[i])
+            model.addConstr(y[b] <= x[j])
 
         w[i] += bond_energy_AB
         w[j] += bond_energy_AB
 
-    model.addConstr( sum(x.values()) == numb )
+    model.addConstr(sum(x.values()) == numb)
 
     site_energies = [params[site_types[i]] for i in xindices]
     layer_energy = params['layer']
@@ -43,25 +43,25 @@ def mip_optimize(params, site_types, bonds, layers, partitions, numb):
 
         decision = {i: model.addVar(vtype=GRB.BINARY) for i in layer_indices}
         deltap = {i: model.addVar(vtype=GRB.CONTINUOUS, lb=0)
-                       for i in layer_indices}
+                  for i in layer_indices}
         deltam = {i: model.addVar(vtype=GRB.CONTINUOUS, lb=0)
-                       for i in layer_indices}
+                  for i in layer_indices}
 
         for i, layer in enumerate(layers):
-            model.addConstr( deltap[i] - deltam[i] ==
-                             2 * sum([x[j] for j in layer]) - len(layer) )
-            model.addConstr( deltap[i] <= decision[i] * 2 * len(layer) )
-            model.addConstr( deltam[i] <= (1 - decision[i]) * 2 * len(layer) )
+            model.addConstr(deltap[i] - deltam[i] ==
+                            2 * sum([x[j] for j in layer]) - len(layer))
+            model.addConstr(deltap[i] <= decision[i] * 2 * len(layer))
+            model.addConstr(deltam[i] <= (1 - decision[i]) * 2 * len(layer))
 
-        model.addConstr( layer_contribution == layer_energy * sum([deltap[i] + deltam[i] for i in layer_indices]))
+        model.addConstr(layer_contribution == layer_energy * sum([deltap[i] + deltam[i] for i in layer_indices]))
 
-    #symmetry-breaking constraints
+    # symmetry-breaking constraints
     for pa, pb in partitions:
-        model.addConstr( sum([x[e] for e in pa]) >= sum([x[e] for e in pb]))
+        model.addConstr(sum([x[e] for e in pa]) >= sum([x[e] for e in pb]))
 
-    model.setObjective(    sum([(site_energies[i] + w[i]) * x[i] for i in xindices])
-                - 2 * bond_energy_AB * sum(y.values())
-                + layer_contribution, GRB.MINIMIZE)
+    model.setObjective(sum([(site_energies[i] + w[i]) * x[i] for i in xindices])
+                       - 2 * bond_energy_AB * sum(y.values())
+                       + layer_contribution, GRB.MINIMIZE)
 
     model.params.MIPGap = 0
     model.params.Presolve = 2
@@ -77,6 +77,7 @@ def mip_optimize(params, site_types, bonds, layers, partitions, numb):
     xs = [int(round(x[e].x)) for e in xindices]
     return objective, np.array(xs)
 
+
 def run(size, element):
 
     coords = octahedron.build_nanoparticle(size)
@@ -86,6 +87,7 @@ def run(size, element):
     numb = num_sites // 2
     numa = num_sites - numb
     print("num. sites:", num_sites)
+    print("Pd%d%s%d" % (numa, element, numb))
 
     params = energetic_data.parameters[element]
     objective, xs = mip_optimize(params, site_types, bonds,
@@ -94,6 +96,7 @@ def run(size, element):
     print("energy:", objective)
     print("configuration:", xs)
     draw_nanoparticle.draw(coords, xs)
+
 
 def main():
 
@@ -110,6 +113,7 @@ def main():
         raise Exception("element must be one of {Ag, Au, Cu, Zn}")
 
     run(size, element)
+
 
 if __name__ == "__main__":
     main()

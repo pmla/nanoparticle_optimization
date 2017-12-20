@@ -10,6 +10,7 @@ def evaluate(xs, intercept, clusters):
             E += param
     return E
 
+
 def read_annealing_configs(path):
 
     lines = open(path).read().split('\n')
@@ -21,10 +22,11 @@ def read_annealing_configs(path):
     configs = [e for e in configs]
     return dict([(s, c) for s, c in zip(sizes, configs)])
 
+
 def get_annealed_configurations(intercept, clusters):
     configs = read_annealing_configs('annealing_configurations.txt')
 
     data = [(n, evaluate(config, intercept, clusters))
-             for n, config in configs.items()]
+            for n, config in configs.items()]
     ns, energies = zip(*sorted(data))
     return np.array(ns), np.array(energies)

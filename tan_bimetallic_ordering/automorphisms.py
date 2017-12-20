@@ -19,4 +19,3 @@ def gen_automorphisms(pos):
 
     auto = [np.unique(e) for e in full_auto]
     return auto, np.array(full_auto).T
-

@@ -4,8 +4,10 @@ import numpy as np
 def tuplelist(ps):
     return [tuple(e) for e in ps]
 
+
 def keep_unique(ps):
     return sorted(set([tuple(e) for e in ps]))
+
 
 def build_nanoparticle(n=5):
     '''
@@ -29,6 +31,7 @@ def build_nanoparticle(n=5):
     indices = np.argsort(norms)[:-6]
     return ps[indices]
 
+
 def get_neighbours(ps):
 
     threshold = (np.sqrt(2) + 2) / 2
@@ -44,24 +47,27 @@ def get_neighbours(ps):
 
     return coord, bonds
 
+
 def get_layers(ps):
 
-    zs = ps[:,2]
+    zs = ps[:, 2]
     return [np.where(zs == z)[0] for z in np.unique(zs)]
+
 
 def get_partitions(ps):
 
     tolerance = 1E-4
-    px0 = ps[:,0] < +tolerance
-    px1 = ps[:,0] > -tolerance
+    px0 = ps[:, 0] < +tolerance
+    px1 = ps[:, 0] > -tolerance
 
-    py0 = ps[:,1] < +tolerance
-    py1 = ps[:,1] > -tolerance
+    py0 = ps[:, 1] < +tolerance
+    py1 = ps[:, 1] > -tolerance
 
-    pz0 = ps[:,2] < +tolerance
-    pz1 = ps[:,2] > -tolerance
+    pz0 = ps[:, 2] < +tolerance
+    pz1 = ps[:, 2] > -tolerance
 
     return [(px0, px1), (py0, py1), (pz0, pz1)]
+
 
 def get_attributes(ps):
 
