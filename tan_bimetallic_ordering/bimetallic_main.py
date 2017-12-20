@@ -17,10 +17,8 @@ def build_mipmodel(intercept, clusters, numb):
     xindices = sorted([i for i, param in xclusters])
 
     model = Model("mip1")
-    x = dict([(site, model.addVar(vtype=GRB.BINARY))
-              for (site, param) in xclusters])
-    y = dict([(sites, model.addVar(vtype=GRB.BINARY))
-              for (sites, param) in yclusters])
+    x = {site: model.addVar(vtype=GRB.BINARY) for site, param in xclusters}
+    y = {sites: model.addVar(vtype=GRB.BINARY) for sites, param in yclusters}
     model.update()
 
     for (sites, param) in yclusters:
@@ -39,13 +37,14 @@ def build_mipmodel(intercept, clusters, numb):
                 + sum([param * y[sites] for (sites, param) in yclusters]),
                 GRB.MINIMIZE)
 
+    model.params.MIPGap = 0
     model.params.Presolve = 2
     model.params.MIPFocus = 2
     return model, x, xindices
 
-def solve_mip_model(numb, intercept, clusters, sym_mappings, num_solutions):
+def solve_mipmodel(numb, intercept, clusters, sym_mappings, num_solutions):
 
-    model, x, sites = build_mipmodel(intercept, clusters, numb)
+    model, x, xindices = build_mipmodel(intercept, clusters, numb)
 
     energies = []
     for it in range(num_solutions):
@@ -56,15 +55,15 @@ def solve_mip_model(numb, intercept, clusters, sym_mappings, num_solutions):
             break
 
         objective = model.getAttr("ObjVal")
-        xs = np.array([int(round(x[e].x)) for e in sites]).astype(np.int8)
+        xs = np.array([int(round(x[e].x)) for e in xindices]).astype(np.int8)
         xprev = xs
 
         energies += [objective]
 
         #sum {xj : x'_j = 0} + sum {1-xj : x'_j = 1} >= 1
         for mapping in sym_mappings:
-            inactive = [x[mapping[i]] for i in sites if xprev[i] == 0]
-            active = [x[mapping[i]] for i in sites if xprev[i] == 1]
+            inactive = [x[mapping[i]] for i in xindices if xprev[i] == 0]
+            active = [x[mapping[i]] for i in xindices if xprev[i] == 1]
             model.addConstr(sum(inactive + [1 - e for e in active]) >= 1)
         model.update()
         model.params.BestObjStop = objective + 1E-9
@@ -76,7 +75,8 @@ def calc_formation_energy(num_atoms, y0, y1, xs, ys):
 
     fracs = np.array(xs).astype(np.double) / num_atoms
     ys = np.array(ys).astype(np.double)
-    return ys - (y0 + (y1 - y0) * fracs)
+    ys = ys - (y0 + (y1 - y0) * fracs)
+    return ys / num_atoms
 
 def main(num_solutions):
 
@@ -87,7 +87,7 @@ def main(num_solutions):
     mip_energies = []
     ns = np.arange(0, num_atoms + 1)
     for numb in ns:
-        energies = solve_mip_model(numb, intercept, clusters,
+        energies = solve_mipmodel(numb, intercept, clusters,
                                    sym_mappings, num_solutions)
         mip_energies += [energies]
 
@@ -120,10 +120,13 @@ def main(num_solutions):
     plt.scatter(ns, fs, marker='o', edgecolor='C0',
                 facecolor='none', lw=2, label='MIP ground state', zorder=1)
 
-    ns, fs = zip(*nth_data)
-    plt.scatter(ns, fs, marker='o', edgecolor='C2', facecolor='none',
-                lw=2, label='MIP nth energy level state', zorder=0)
+    if len(nth_data):
+        ns, fs = zip(*nth_data)
+        plt.scatter(ns, fs, marker='o', edgecolor='C2', facecolor='none',
+                    lw=2, label='MIP nth energy level state', zorder=0)
 
+    plt.xlabel('Number of Pt atoms')
+    plt.ylabel('$E_f$ (meV / atom)')
     plt.legend(loc=9)
     plt.show()
 

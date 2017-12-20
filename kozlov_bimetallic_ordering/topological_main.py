@@ -8,18 +8,17 @@ import draw_nanoparticle
 
 def mip_optimize(params, site_types, bonds, layers, partitions, numb):
 
-    num_sites = len(site_types)
-    xindices = range(num_sites)
-    yindices = range(len(bonds))
+    xindices = list(range(len(site_types)))
 
     model = Model("nanoparticle")
-    x = dict([(i, model.addVar(vtype=GRB.BINARY)) for i in xindices])
-    y = dict([(j, model.addVar(vtype=GRB.BINARY)) for j in yindices])
+    x = {i: model.addVar(vtype=GRB.BINARY) for i in xindices}
+    y = {b: model.addVar(vtype=GRB.BINARY) for b in bonds}
 
     bond_energy_AB = params['bond']
     w = np.zeros(len(xindices)).astype(np.double)
-    for b, (i, j) in enumerate(bonds):
+    for b in bonds:
 
+        i, j = b
         if bond_energy_AB <= 0:
             model.addConstr( y[b] >= x[i] + x[j] - 1)
         else:
@@ -29,8 +28,7 @@ def mip_optimize(params, site_types, bonds, layers, partitions, numb):
         w[i] += bond_energy_AB
         w[j] += bond_energy_AB
 
-
-    model.addConstr( sum([x[e] for e in xindices]) == numb)
+    model.addConstr( sum(x.values()) == numb )
 
     site_energies = [params[site_types[i]] for i in xindices]
     layer_energy = params['layer']
@@ -43,12 +41,11 @@ def mip_optimize(params, site_types, bonds, layers, partitions, numb):
     else:
         layer_indices = range(len(layers))
 
-        decision = dict([(i, model.addVar(vtype=GRB.BINARY))
-                        for i in layer_indices])
-        deltap = dict([(i, model.addVar(vtype=GRB.CONTINUOUS, lb=0))
-                       for i in layer_indices])
-        deltam = dict([(i, model.addVar(vtype=GRB.CONTINUOUS, lb=0))
-                       for i in layer_indices])
+        decision = {i: model.addVar(vtype=GRB.BINARY) for i in layer_indices}
+        deltap = {i: model.addVar(vtype=GRB.CONTINUOUS, lb=0)
+                       for i in layer_indices}
+        deltam = {i: model.addVar(vtype=GRB.CONTINUOUS, lb=0)
+                       for i in layer_indices}
 
         for i, layer in enumerate(layers):
             model.addConstr( deltap[i] - deltam[i] ==
@@ -66,8 +63,9 @@ def mip_optimize(params, site_types, bonds, layers, partitions, numb):
                 - 2 * bond_energy_AB * sum(y.values())
                 + layer_contribution, GRB.MINIMIZE)
 
-    model.params.Presolve = 2
     model.params.MIPGap = 0
+    model.params.Presolve = 2
+    model.params.MIPFocus = 2
     model.optimize()
     status = model.getAttr("Status")
     print("status:", status)
@@ -77,7 +75,6 @@ def mip_optimize(params, site_types, bonds, layers, partitions, numb):
     print("objective:", objective)
 
     xs = [int(round(x[e].x)) for e in xindices]
-    ys = [int(round(y[e].x)) for e in yindices]
     return objective, np.array(xs)
 
 def run(size, element):
